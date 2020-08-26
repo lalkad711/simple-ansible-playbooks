@@ -1,0 +1,40 @@
+---
+
+- name: Install tools
+  apt:
+    name:
+      - python-mysqldb
+    state: present
+    update_cache: yes
+       
+- name: Install mysql server
+  apt: 
+    name: mysql-server
+    state: present
+    update_cache: yes
+          
+- name: ensure mysql is listening on all ports
+  lineinfile:
+    path: /etc/mysql/my.cnf
+    regex: '^bind-address'
+    line: bind-address = {{ ansible_eth0.ipv4.address }}
+  notify:
+    - restart mysql
+                 
+- name: ensure database has started
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+          
+- name: create database
+  mysql_db:
+    name: {{ db_name }}
+    state: present
+          
+- name: create a user in database
+  mysql_user:
+    name: {{ db_user_name }}
+    password: {{ db_user_pass }}
+    priv: '{{ db_name}}.*:ALL'
+    host: '{{ db_user_host }}'
