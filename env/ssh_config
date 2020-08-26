@@ -1,0 +1,4 @@
+Host *
+  IdentityFile /home/ansible/.ssh/id_rsa
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
