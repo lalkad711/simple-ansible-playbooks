@@ -1,0 +1,52 @@
+---
+  - hosts: loadbalancer
+    become: true
+    tasks: 
+      - name: Install tools
+        apt:
+          name:
+            - python-httplib2
+          state: present
+          update_cache: yes
+          
+      - name: install nginx loadbalancer
+        become: true
+        apt: 
+          name: nginx
+          state: present
+          update_cache: yes
+          
+      - name: ensure nginx started
+        service:
+          name: nginx
+          state: started
+          enabled: yes
+          
+      - name: configure ngix for loadbalancing
+        template:
+          src: templates/nginx.conf.j2
+          dest: /etc/nginx/sites-available/demo
+          mode: '0644'
+        notify: 
+          - restart nginx
+          
+      - name: de-activate nginx default
+        file:
+          path: /etc/nginx/sites-available/default
+          state: absent
+        notify: 
+          - restart nginx
+      
+      - name: active demo app in nginx
+        file:
+          src: /etc/nginx/sites-available/demo
+          dest: /etc/nginx/sites-enabled/demo
+          state: link
+        notify:
+          - restart nginx
+          
+    handlers:
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
