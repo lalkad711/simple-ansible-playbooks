@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+  control:
+    build: ./env
+    image: local/ansible
+    ports: 
+      - "2200:22"
+    volumes:
+      - ./:/work
+
+  lb01:
+    image: local/ansible
+    ports:
+      - "2201:22"
+      - "8001:80"
+    depends_on:
+      - control
+
+  app01:
+    image: local/ansible
+    ports: 
+      - "2211:22"
+      - "8081:80"
+    depends_on:
+      - control
+
+  app02:
+    image: local/ansible
+    ports: 
+      - "2212:22"
+      - "8082:80"
+    depends_on:
+      - control
+
+  db01:
+    image: local/ansible
+    ports:
+      - "2222:22"
+      - "3306:3306"
+    depends_on:
+      - control
