@@ -1,0 +1,11 @@
+	---
+  - hosts: control
+    become: true
+    tasks: 
+      - name: Install tools on control
+        apt:
+          state: present
+          update_cache: yes
+          name:
+            - curl
+            - python-httplib2
