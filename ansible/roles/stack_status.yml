@@ -1,0 +1,65 @@
+---
+
+- hosts: loadbalancer
+  become: true
+  tasks: 
+    - name: check nginx status
+      command: service nginx status
+      
+    - name: verify nginx is listening on port 80
+      wait_for:
+        port: 80
+        timeout: 1
+      
+- hosts: webservers
+  become: true
+  tasks: 
+    - name: check apache2 status
+      command: service apache2 status
+
+    - name: verify apache is listening on port 80
+      wait_for:
+        port: 80
+        timeout: 1
+      
+- hosts: database
+  become: true
+  tasks: 
+    - name: check mysql status
+      command: service mysql status
+      
+    - name: verify mysql is listening on port 3306
+      wait_for:
+        host: "{{ ansible_eth0.ipv4.address }}"
+        port: 3306
+        timeout: 1
+        
+- hosts: control
+  become: true
+  tasks: 
+    - name: add end to end check from control
+      uri: 
+        url: http://{{item}}
+        return_content: yes
+      loop: "{{ query('inventory_hostnames', 'loadbalancer') }}"
+      register: lb_index
+        
+    - fail:
+        msg: Index failed to return content
+      when: "'Hello, from sunny' not in item.content"
+      loop: "{{ lb_index.results }}"
+      
+- hosts: loadbalancer
+  become: true
+  tasks: 
+    - name: add backend check from loadbalancer
+      uri: 
+        url: http://{{item}}
+        return_content: yes
+      loop: "{{ query('inventory_hostnames', 'webservers') }}"
+      register: app_index
+# {{ item.item }} will not work as docker-compose would assign the hostnames randomly      
+    - fail:
+        msg: Index failed to return content
+      when: "'Hello, from sunny {{item.item}}!' not in item.content"
+      loop: "{{ app_index.results }}"
